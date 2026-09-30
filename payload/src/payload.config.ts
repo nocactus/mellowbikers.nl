@@ -22,6 +22,7 @@ import { Footer } from './globals/Footer'
 import { SiteSettings } from './globals/SiteSettings'
 import { verifyTurnstile } from './lib/turnstile'
 import { postmarkAdapter } from './lib/postmarkEmail'
+import { fillEmptyEmailBody } from './lib/formEmail'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -105,6 +106,7 @@ export default buildConfig({
 
     formBuilderPlugin({
       fields: { payment: false },
+      beforeEmail: fillEmptyEmailBody,
       formOverrides: {
         admin: { group: 'Formulieren' },
       },
