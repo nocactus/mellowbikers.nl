@@ -25,10 +25,16 @@ overschrijft hem.
 **Het build command begint met `cd payload &&`, en dat moet zo blijven.**
 
 ```
-Build command:   cd payload && npm ci && npm run build:worker
-Deploy command:  cd payload && npx wrangler deploy
-Root directory:  leeg
+Build command:                    cd payload && npm ci && npm run build:worker
+Deploy command:                   cd payload && npx wrangler deploy
+Non-production branch deploy:     cd payload && npx wrangler versions upload
+Root directory:                   leeg
 ```
+
+Die derde regel is een aparte instelling voor elke branch behalve `main`,
+en staat standaard op `npx wrangler versions upload` zonder `cd`. Dan
+slaagt de build en faalt de upload op `Missing entry-point to Worker
+script`, omdat er in de repo-root geen `wrangler.jsonc` staat.
 
 Dat ziet eruit als iets dat je opruimt door de root directory op `payload`
 te zetten en die `cd` weg te halen. Dat is geprobeerd, drie keer, ook met
