@@ -43,6 +43,10 @@ toegepast en elke build faalde op
 `ENOENT: /opt/buildhome/repo/package.json`. Zolang dat zo is, is het build
 command de enige plek waar de map te sturen valt.
 
+Welke build er live staat, zie je op het admin-dashboard (Deploy-info),
+op `/version.json` en in de paginabron (`<meta name="version">`). De
+waarden worden tijdens de build ingebakken; zie `payload/src/lib/version.ts`.
+
 `npm ci` staat er expliciet omdat Cloudflare's autodetectie een lockfile in
 de repo-root zoekt en die er niet is; zonder deze regel wordt de install
 volledig overgeslagen en draait `postinstall` niet — en dan deployt er een

@@ -46,6 +46,9 @@ export default buildConfig({
     user: Users.slug,
     importMap: { baseDir: path.resolve(dirname) },
     meta: { titleSuffix: ' — Mellowbikers' },
+    components: {
+      afterDashboard: ['@/components/admin/DeployInfo#DeployInfo'],
+    },
   },
 
   collections: [Pages, Events, Members, Faq, Media, Users],

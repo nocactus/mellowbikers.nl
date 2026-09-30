@@ -4,6 +4,7 @@ import { getPayload } from 'payload'
 import config from '@payload-config'
 
 import { SiteHeader } from '@/components/SiteHeader'
+import { versionLabel } from '@/lib/version'
 import '@/styles/globals.css'
 
 /**
@@ -21,6 +22,8 @@ export const metadata: Metadata = {
   title: 'Mellowbikers',
   description: 'Dé mountainbike vereniging van de Brabantse Wal',
   icons: { icon: '/favicon.png', apple: '/favicon.png' },
+  // Welke build draait er? Zie lib/version.ts.
+  other: { version: versionLabel },
 }
 
 export default async function FrontendLayout({ children }: { children: ReactNode }) {
