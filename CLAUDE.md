@@ -44,7 +44,8 @@ toegepast en elke build faalde op
 command de enige plek waar de map te sturen valt.
 
 Welke build er live staat, zie je op het admin-dashboard (Deploy-info),
-op `/version.json` en in de paginabron (`<meta name="version">`). De
+op `/version.json` en in de paginabron: een HTML-comment bovenaan `<body>`
+en `<meta name="version">`. De
 waarden worden tijdens de build ingebakken; zie `payload/src/lib/version.ts`.
 
 `npm ci` staat er expliciet omdat Cloudflare's autodetectie een lockfile in

@@ -2,9 +2,10 @@
  * Welke versie draait er? De waarden zijn tijdens de build ingebakken
  * door `env` in next.config.ts; hier worden ze op één plek leesbaar.
  *
- * Te zien op drie plekken:
+ * Te zien op vier plekken:
  * - op het dashboard van de admin (components/admin/DeployInfo.tsx);
- * - in de paginabron van elke pagina, als `<meta name="version">`;
+ * - als HTML-comment bovenaan de body van elke pagina;
+ * - als `<meta name="version">` in de paginabron;
  * - op /version.json, voor alle velden.
  *
  * Het build-ID is dat van Workers Builds, dus terug te vinden in het
@@ -32,3 +33,29 @@ export const versionLabel = [
 ]
   .filter(Boolean)
   .join(' · ')
+
+/**
+ * Het blok dat als HTML-comment in elke pagina staat. De meta-tag alleen
+ * is niet genoeg: Next streamt metadata bij dynamische pagina's, en voor
+ * een gewone browser belandt die tag dan niet in `<head>` maar ergens
+ * verderop in de bron.
+ *
+ * `--` mag niet in een comment voorkomen; een commit-bericht met `-->`
+ * zou hem anders voortijdig sluiten.
+ */
+export const versionComment = (() => {
+  const regels: [string, string | null][] = [
+    ['Commit', version.commitShort],
+    ['Bericht', version.commitMessage],
+    ['Branch', version.branch],
+    ['Build', version.buildId],
+    ['Gebouwd', version.builtAt],
+    ['Payload', version.payload],
+    ['Next.js', version.next],
+  ]
+  const body = regels
+    .filter(([, waarde]) => waarde)
+    .map(([label, waarde]) => `  ${`${label}:`.padEnd(9)} ${String(waarde).replace(/-{2,}/g, '–')}`)
+    .join('\n')
+  return `<!--\n  Mellowbikers\n${body}\n-->`
+})()

@@ -4,7 +4,7 @@ import { getPayload } from 'payload'
 import config from '@payload-config'
 
 import { SiteHeader } from '@/components/SiteHeader'
-import { versionLabel } from '@/lib/version'
+import { versionComment, versionLabel } from '@/lib/version'
 import '@/styles/globals.css'
 
 /**
@@ -65,6 +65,9 @@ export default async function FrontendLayout({ children }: { children: ReactNode
         />
       </head>
       <body className="bg-mellow-dark text-mellow-white">
+        {/* Welke build draait er? React rendert zelf geen comments, dus
+            via een verborgen element. Zie lib/version.ts. */}
+        <div hidden dangerouslySetInnerHTML={{ __html: versionComment }} />
         <a
           href="#main-content"
           className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:top-4 focus:left-4 focus:bg-mellow-groen focus:text-mellow-dark focus:px-4 focus:py-2 focus:rounded"
