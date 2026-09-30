@@ -1,10 +1,31 @@
 'use client'
 
-import { useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import Script from 'next/script'
 import type { Form } from '@/payload-types'
 
 type Status = { state: 'idle' | 'sending' | 'ok' | 'error'; message?: string }
+
+type Turnstile = {
+  render: (
+    container: HTMLElement,
+    options: {
+      sitekey: string
+      callback: (token: string) => void
+      'expired-callback': () => void
+      'error-callback': () => void
+    },
+  ) => string
+  reset: (widgetId: string) => void
+  remove: (widgetId: string) => void
+}
+
+const turnstile = () => (window as unknown as { turnstile?: Turnstile }).turnstile
+
+/** Hoe lang een verzending op een token wacht voordat hij opgeeft. De
+ *  widget laadt pas bij de eerste aanraking van het formulier, dus wie
+ *  snel is, klikt op verzenden terwijl hij nog bezig is. */
+const TOKEN_WACHTTIJD_MS = 8000
 
 const INPUT =
   'w-full px-4 py-2 rounded bg-mellow-dark text-mellow-white border border-mellow-groen focus:outline-none focus:border-mellow-groen/70'
@@ -25,6 +46,63 @@ export const FormRenderer = ({ form }: { form: Form }) => {
    */
   const [turnstileNodig, setTurnstileNodig] = useState(false)
 
+  /**
+   * Expliciet renderen in plaats van de `cf-turnstile`-class. Bij die
+   * impliciete variant zoekt het script één keer naar widgets, op het
+   * moment dat het laadt. Navigeer je daarna via een link naar een andere
+   * pagina met een formulier, dan is het script al geladen, voert Next het
+   * niet opnieuw uit, en wordt die widget nooit getekend: geen token, en
+   * elke verzending strandt tot je de pagina ververst. `onReady` draait
+   * wél bij elke mount.
+   */
+  const widgetContainer = useRef<HTMLDivElement>(null)
+  const widgetId = useRef<string | null>(null)
+  const token = useRef<string | null>(null)
+
+  const renderWidget = () => {
+    const ts = turnstile()
+    if (!ts || !widgetContainer.current || widgetId.current) return
+    widgetId.current = ts.render(widgetContainer.current, {
+      sitekey: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? '',
+      callback: (value) => {
+        token.current = value
+      },
+      'expired-callback': () => {
+        token.current = null
+      },
+      'error-callback': () => {
+        token.current = null
+      },
+    })
+  }
+
+  // Staat het script al klaar (van een eerdere pagina), dan meteen
+  // tekenen; anders doet `onReady` het zodra het geladen is.
+  useEffect(() => {
+    renderWidget()
+    return () => {
+      if (widgetId.current) turnstile()?.remove(widgetId.current)
+      widgetId.current = null
+      token.current = null
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const wachtOpToken = async (): Promise<string | null> => {
+    const start = Date.now()
+    while (!token.current && Date.now() - start < TOKEN_WACHTTIJD_MS) {
+      await new Promise((resolve) => setTimeout(resolve, 200))
+    }
+    return token.current
+  }
+
+  // Een token is eenmalig. Na een geweigerde verzending moet er een nieuw
+  // komen, anders weigert de server de volgende poging ook.
+  const resetWidget = () => {
+    token.current = null
+    if (widgetId.current) turnstile()?.reset(widgetId.current)
+  }
+
   const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setStatus({ state: 'sending' })
@@ -33,12 +111,17 @@ export const FormRenderer = ({ form }: { form: Form }) => {
     // de handler vrij, dus daarna is het null.
     const formElement = event.currentTarget
     const formData = new FormData(formElement)
-    const turnstileToken = formData.get('cf-turnstile-response')
+    // De widget zet zijn token ook als verborgen veld in het formulier;
+    // dat hoort niet tussen de ingevulde velden.
     formData.delete('cf-turnstile-response')
 
-    // Nog geen token: de widget is niet klaar of niet afgerond. Dat
+    // Bij een verzending direct na de eerste aanraking is de widget vaak
+    // nog bezig. Even wachten, en pas daarna opgeven.
+    const turnstileToken = await wachtOpToken()
+
+    // Nog steeds geen token: de widget is niet klaar of niet afgerond. Dat
     // hoeft de server niet te beslissen — zeg het meteen.
-    if (typeof turnstileToken !== 'string' || turnstileToken.length === 0) {
+    if (!turnstileToken) {
       setStatus({
         state: 'error',
         message: 'De beveiligingscheck is nog niet klaar. Wacht een tel en probeer opnieuw.',
@@ -65,8 +148,8 @@ export const FormRenderer = ({ form }: { form: Form }) => {
 
       setStatus({ state: 'ok' })
       formElement.reset()
-      ;(window as unknown as { turnstile?: { reset: () => void } }).turnstile?.reset()
     } catch (error) {
+      resetWidget()
       setStatus({
         state: 'error',
         message: error instanceof Error ? error.message : 'Er ging iets mis. Probeer het later opnieuw.',
@@ -85,7 +168,11 @@ export const FormRenderer = ({ form }: { form: Form }) => {
   return (
     <>
       {turnstileNodig && (
-        <Script src="https://challenges.cloudflare.com/turnstile/v0/api.js" strategy="afterInteractive" />
+        <Script
+          src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"
+          strategy="afterInteractive"
+          onReady={renderWidget}
+        />
       )}
 
       <form
@@ -168,10 +255,7 @@ export const FormRenderer = ({ form }: { form: Form }) => {
           )
         })}
 
-        <div
-          className="sm:col-span-2 cf-turnstile"
-          data-sitekey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY}
-        />
+        <div ref={widgetContainer} className="sm:col-span-2" />
 
         {status.state === 'error' && (
           <p className="sm:col-span-2 text-sm bg-white/10 p-2 rounded text-mellow-white" role="alert">
