@@ -21,6 +21,7 @@
     "postinstall": "node scripts/patch-payload-pbkdf2.mjs"
   },
   "dependencies": {
+    "@mux/mux-player-react": "^3.14.0",
     "@opennextjs/cloudflare": "^1.11.0",
     "@payloadcms/db-d1-sqlite": "3.90.1",
     "@payloadcms/next": "3.90.1",

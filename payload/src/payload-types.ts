@@ -456,6 +456,10 @@ export interface MediaBlockType {
    * Verplicht voor schermlezers.
    */
   videoTitle?: string | null;
+  /**
+   * Het stilstaande beeld tot de video speelt. Laat je dit leeg, dan is dat zwart — vooral zichtbaar voor bezoekers die bewegend beeld hebben uitgezet.
+   */
+  videoPoster?: (number | null) | Media;
   fullBleed?: boolean | null;
   caption?: string | null;
   /**
@@ -1406,6 +1410,7 @@ export interface MediaBlockTypeSelect<T extends boolean = true> {
   image?: T;
   videoUrl?: T;
   videoTitle?: T;
+  videoPoster?: T;
   fullBleed?: T;
   caption?: T;
   appearance?:

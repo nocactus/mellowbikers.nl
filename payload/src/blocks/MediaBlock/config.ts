@@ -46,6 +46,17 @@ export const MediaBlock: Block = {
       },
     },
     {
+      name: 'videoPoster',
+      type: 'upload',
+      relationTo: 'media',
+      label: 'Poster voor de video',
+      admin: {
+        condition: (_, s) => s?.kind === 'video',
+        description:
+          'Het stilstaande beeld tot de video speelt. Laat je dit leeg, dan is dat zwart — vooral zichtbaar voor bezoekers die bewegend beeld hebben uitgezet.',
+      },
+    },
+    {
       name: 'fullBleed',
       type: 'checkbox',
       label: 'Over de volle schermbreedte',
