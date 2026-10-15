@@ -3,7 +3,7 @@ import config from '@payload-config'
 import type { EventListBlock, Event } from '@/payload-types'
 import { Section } from '@/components/Section'
 import { CONTAINER } from '@/lib/theme'
-import { formatEventDate } from '@/lib/events'
+import { formatEventDate, eventYear } from '@/lib/events'
 
 export const EventListComponent = async ({ block }: { block: EventListBlock }) => {
   const payload = await getPayload({ config })
@@ -58,24 +58,70 @@ export const EventListComponent = async ({ block }: { block: EventListBlock }) =
   )
 }
 
-const EventRows = ({ events, muted = false }: { events: Event[]; muted?: boolean }) => (
-  <ul className="list-none space-y-6">
-    {events.map((event) => (
-      <li
-        key={event.id}
-        className={`border-b border-mellow-white/20 pb-6 ${muted ? 'opacity-50' : ''}`}
-      >
-        <div className="grid md:grid-cols-[200px_1fr] gap-2 md:gap-6">
-          <time dateTime={event.startDate} className="text-mellow-groen font-bold text-lg">
-            {formatEventDate(event)}
-          </time>
-          <div>
-            <h3 className="text-xl font-bold text-mellow-white">{event.title}</h3>
-            {event.location && <p className="text-sm text-mellow-white/70 mb-2">{event.location}</p>}
-            {event.summary && <p className="text-base text-mellow-white">{event.summary}</p>}
-          </div>
-        </div>
-      </li>
-    ))}
-  </ul>
-)
+/**
+ * Ritten per jaar, in de volgorde waarin ze binnenkomen. Een Map houdt
+ * die volgorde vast, en de query sorteert al op datum.
+ */
+function perJaar(events: Event[]): Array<[string, Event[]]> {
+  const groepen = new Map<string, Event[]>()
+  for (const event of events) {
+    const jaar = eventYear(event.startDate)
+    const bestaande = groepen.get(jaar)
+    if (bestaande) bestaande.push(event)
+    else groepen.set(jaar, [event])
+  }
+  return [...groepen.entries()]
+}
+
+/**
+ * Het jaarkopje verschijnt alleen als de lijst meer dan één jaar beslaat.
+ *
+ * De club plant door over de jaargrens heen, en dan stond er een rit in
+ * januari tussen de ritten van december zonder dat je zag dat het om het
+ * jaar erna ging — de volgorde klopte wel, maar lezen kon je het niet.
+ * Staat alles in hetzelfde jaar, dan is een kopje ruis en blijft het weg.
+ *
+ * Binnen een groep staat het jaartal niet in de datum zelf; het kopje
+ * zegt het al. Daarom `formatEventDate(event, 'nooit')`.
+ */
+const EventRows = ({ events, muted = false }: { events: Event[]; muted?: boolean }) => {
+  const groepen = perJaar(events)
+  const toonJaarkopjes = groepen.length > 1
+
+  return (
+    <>
+      {groepen.map(([jaar, ritten], groepIndex) => (
+        <section key={jaar}>
+          {toonJaarkopjes && (
+            <div className={`flex items-center gap-3 mb-4 ${groepIndex === 0 ? '' : 'mt-10'}`}>
+              <span className="text-xs font-bold tracking-[0.14em] text-mellow-white/45">{jaar}</span>
+              <span aria-hidden className="flex-1 h-px bg-mellow-white/15" />
+            </div>
+          )}
+
+          <ul className="list-none space-y-6">
+            {ritten.map((event) => (
+              <li
+                key={event.id}
+                className={`border-b border-mellow-white/20 pb-6 ${muted ? 'opacity-50' : ''}`}
+              >
+                <div className="grid md:grid-cols-[200px_1fr] gap-2 md:gap-6">
+                  <time dateTime={event.startDate} className="text-mellow-groen font-bold text-lg">
+                    {formatEventDate(event, 'nooit')}
+                  </time>
+                  <div>
+                    <h3 className="text-xl font-bold text-mellow-white">{event.title}</h3>
+                    {event.location && (
+                      <p className="text-sm text-mellow-white/70 mb-2">{event.location}</p>
+                    )}
+                    {event.summary && <p className="text-base text-mellow-white">{event.summary}</p>}
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))}
+    </>
+  )
+}

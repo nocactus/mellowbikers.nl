@@ -53,7 +53,7 @@ export const NextEventComponent = async ({ block }: { block: NextEventBlock }) =
                   dateTime={event.startDate}
                   className="block text-mellow-groen font-bold text-lg mb-2"
                 >
-                  {formatEventDate(event)}
+                  {formatEventDate(event, 'bijAnderJaar')}
                 </time>
                 <p className="text-3xl md:text-4xl font-black text-mellow-white leading-tight">
                   {event.title}
