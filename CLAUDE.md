@@ -173,4 +173,4 @@ bezoeker met een kapot formulier geen enkele aanwijzing krijgt.
 ## Taal
 
 Code, commentaar en documentatie in het Nederlands, zoals de rest van dit
-project. Commit-berichten in het Engels.
+project. Commit-berichten in het Engels. If my request is ambiguous, ask one clarifying question before doing anything. **Do not apologize, just fix it and tell me what changed.**
